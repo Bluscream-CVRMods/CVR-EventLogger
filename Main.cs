@@ -1,44 +1,48 @@
-﻿using MelonLoader;
-using EventLogger;
+﻿using ABI_RC.Core.Player;
+using Bluscream;
+using MelonLoader;
 using UnityEngine;
-using Main = EventLogger.Main;
 using ButtonAPI = ChilloutButtonAPI.ChilloutButtonAPIMain;
-using ABI_RC.Core.Player;
+using Main = Bluscream.Main;
 
 [assembly: MelonInfo(typeof(Main), Guh.Name, Guh.Version, Guh.Author, Guh.DownloadLink)]
 [assembly: MelonGame("Alpha Blend Interactive", "ChilloutVR")]
 
-namespace EventLogger;
+namespace Bluscream;
 
-public static class Guh
-{
+public static class Guh {
     public const string Name = "Event Logger";
     public const string Author = "Bluscream";
     public const string Version = "1.0.0";
     public const string DownloadLink = "";
 }
 
-public class Main : MelonMod
-{
+public class Main : MelonMod {
     public MelonPreferences_Entry LogJoinLeavesSetting;
     public MelonPreferences_Entry LogWorldsSetting;
     public MelonPreferences_Entry LogAvatarChangesSetting;
+    public MelonPreferences_Entry LogPreferencesSetting;
 
     public override void OnPreferencesLoaded(string filepath) {
-        MelonLogger.Msg("OnPreferencesLoaded: {0}", filepath);
+        if ((bool)LogPreferencesSetting.BoxedValue) {
+            MelonLogger.Msg("OnPreferencesLoaded: {0}", filepath);
+        }
     }
     public override void OnPreferencesSaved(string filepath) {
-        MelonLogger.Msg("OnPreferencesSaved: {0}", filepath);
+        if ((bool)LogPreferencesSetting.BoxedValue) {
+            MelonLogger.Msg("OnPreferencesSaved: {0}", filepath);
+        }
     }
 
     public override void OnPreSupportModule() {
         MelonLogger.Msg("OnPreSupportModule");
     }
     public override void OnApplicationStart() {
-        var cat = MelonPreferences.CreateCategory(Guh.Name);
+        MelonPreferences_Category cat = MelonPreferences.CreateCategory(Guh.Name);
         LogWorldsSetting = cat.CreateEntry<bool>("LogWorlds", true, "Log World Joins/Leaves");
         LogJoinLeavesSetting = cat.CreateEntry<bool>("LogJoinLeaves", true, "Log Player Joins/Leaves");
         LogAvatarChangesSetting = cat.CreateEntry<bool>("LogAvatarChanges", true, "Log Avatar switching");
+        LogPreferencesSetting = cat.CreateEntry<bool>("LogPreferences", false, "Log Saving/Loading of MelonPrefs");
 
         ButtonAPI.OnInit += ButtonAPI_OnInit;
         ButtonAPI.OnPlayerJoin += OnPlayerJoin;
@@ -55,34 +59,42 @@ public class Main : MelonMod
     }
 
     private void OnPlayerJoin(PlayerDescriptor player) {
-        if ((bool)LogJoinLeavesSetting.BoxedValue)
+        if ((bool)LogJoinLeavesSetting.BoxedValue) {
             MelonLogger.Msg(!string.IsNullOrEmpty(player.userName) ? $"\"{player.userName}\" ({player.ownerId}) joined" : "You joined");
-    }
-    private void OnAvatarInstantiated_Post_E(PuppetMaster arg1, GameObject arg2) {
-        if ((bool)LogAvatarChangesSetting.BoxedValue)
-            MelonLogger.Msg($"OnAvatarInstantiated_Post_E {arg1.name}");
+        }
     }
     private bool OnAvatarInstantiated_Pre_E(PuppetMaster arg1, GameObject arg2) {
-        if ((bool)LogAvatarChangesSetting.BoxedValue)
-            MelonLogger.Msg("OnAvatarInstantiated_Pre_E");
+        if ((bool)LogAvatarChangesSetting.BoxedValue) {
+            MelonLogger.Msg($"OnAvatarInstantiated_Pre_E ({arg1.name}) ({arg2.name})");
+        }
+
         return true;
     }
+    private void OnAvatarInstantiated_Post_E(PuppetMaster arg1, GameObject arg2) {
+        if ((bool)LogAvatarChangesSetting.BoxedValue) {
+            MelonLogger.Msg($"OnAvatarInstantiated_Post_E ({arg1.name}) ({arg2.name})");
+        }
+    }
     private void OnPlayerLeave(PlayerDescriptor player) {
-        if ((bool)LogJoinLeavesSetting.BoxedValue)
+        if ((bool)LogJoinLeavesSetting.BoxedValue) {
             MelonLogger.Msg(!string.IsNullOrEmpty(player.userName) ? $"\"{player.userName}\" ({player.ownerId}) left" : "You left");
+        }
     }
 
-    public override void OnSceneWasInitialized(int buildIndex, string sceneName) {
-        if ((bool)LogWorldsSetting.BoxedValue)
-            MelonLogger.Msg("OnSceneWasInitialized: \"{0}\" (1)", sceneName, buildIndex);
-    }
     public override void OnSceneWasLoaded(int buildIndex, string sceneName) {
-        if ((bool)LogWorldsSetting.BoxedValue)
+        if ((bool)LogWorldsSetting.BoxedValue) {
             MelonLogger.Msg("OnSceneWasLoaded: \"{0}\" (1)", sceneName, buildIndex);
+        }
+    }
+    public override void OnSceneWasInitialized(int buildIndex, string sceneName) {
+        if ((bool)LogWorldsSetting.BoxedValue) {
+            MelonLogger.Msg("OnSceneWasInitialized: \"{0}\" (1)", sceneName, buildIndex);
+        }
     }
     public override void OnSceneWasUnloaded(int buildIndex, string sceneName) {
-        if ((bool)LogWorldsSetting.BoxedValue)
+        if ((bool)LogWorldsSetting.BoxedValue) {
             MelonLogger.Msg("OnSceneWasUnloaded: \"{0}\" (1)", sceneName, buildIndex);
+        }
     }
 
     public override void OnApplicationQuit() {
