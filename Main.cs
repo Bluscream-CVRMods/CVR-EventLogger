@@ -56,7 +56,7 @@ public class Main : MelonMod
 
     private void OnPlayerJoin(PlayerDescriptor player) {
         if ((bool)LogJoinLeavesSetting.BoxedValue)
-            MelonLogger.Msg(!string.IsNullOrEmpty(player.userName) ? $"\"{player.userName}\" ({player.ownerId}) joined" : "Local Player Init");
+            MelonLogger.Msg(!string.IsNullOrEmpty(player.userName) ? $"\"{player.userName}\" ({player.ownerId}) joined" : "You joined");
     }
     private void OnAvatarInstantiated_Post_E(PuppetMaster arg1, GameObject arg2) {
         if ((bool)LogAvatarChangesSetting.BoxedValue)
@@ -69,7 +69,7 @@ public class Main : MelonMod
     }
     private void OnPlayerLeave(PlayerDescriptor player) {
         if ((bool)LogJoinLeavesSetting.BoxedValue)
-            MelonLogger.Msg(!string.IsNullOrEmpty(player.userName) ? $"\"{player.userName}\" ({player.ownerId}) lft" : "Local Player Leave");
+            MelonLogger.Msg(!string.IsNullOrEmpty(player.userName) ? $"\"{player.userName}\" ({player.ownerId}) left" : "You left");
     }
 
     public override void OnSceneWasInitialized(int buildIndex, string sceneName) {
