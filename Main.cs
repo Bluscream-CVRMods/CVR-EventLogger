@@ -25,20 +25,22 @@ public static class Guh {
 public static class Patches {
     public static void Patch(HarmonyLib.Harmony harmonyInstance) {
         harmonyInstance.Patch(typeof(CVRVideoPlayer).GetMethod("SetVideoUrl"), prefix: new HarmonyMethod(typeof(Patches).GetMethod("OnSetVideoUrl", BindingFlags.Static | BindingFlags.NonPublic)));
+        harmonyInstance.Patch(typeof(ABI_RC.Core.Networking.IO.Instancing.Instances).GetMethod("SetJoinTarget"), postfix: new HarmonyMethod(typeof(Patches).GetMethod("SetJoinTarget")));
         MelonLogger.Msg("Harmony patches completed!");
     }
     private static bool OnSetVideoUrl(string url, bool broadcast = true, string objPath = "", string username = null, bool isPaused = false) {
-        MelonLogger.Msg($"VideoPlayer URL changed: {url}");
+        if ((bool)Main.LogVideoPlayerSetting.BoxedValue) MelonLogger.Msg($"VideoPlayer URL changed: {url}");
         return true;
+    }
+    public static void SetJoinTarget(string instanceId, string worldId) {
+        if ((bool)Main.LogWorldsSetting.BoxedValue) MelonLogger.Msg("Joining Instance {0}:{1}", worldId, instanceId);
     }
 }
 
 public class Main : MelonMod {
     public bool fully_loaded = false;
-    public MelonPreferences_Entry LogJoinLeavesSetting;
-    public MelonPreferences_Entry LogWorldsSetting;
-    public MelonPreferences_Entry LogAvatarChangesSetting;
-    public MelonPreferences_Entry LogPreferencesSetting;
+    public MelonPreferences_Entry LogJoinLeavesSetting, LogAvatarChangesSetting, LogPreferencesSetting;
+    public static MelonPreferences_Entry LogWorldsSetting, LogVideoPlayerSetting;
 
 
     public override void OnPreferencesLoaded(string filepath) {
@@ -62,6 +64,7 @@ public class Main : MelonMod {
         LogJoinLeavesSetting = cat.CreateEntry<bool>("LogJoinLeaves", true, "Log Player Joins/Leaves");
         LogAvatarChangesSetting = cat.CreateEntry<bool>("LogAvatarChanges", true, "Log Avatar switching");
         LogPreferencesSetting = cat.CreateEntry<bool>("LogPreferences", false, "Log Saving/Loading of MelonPrefs");
+        LogVideoPlayerSetting = cat.CreateEntry<bool>("LogVideoPlayer", false, "Log Video Player Events");
 
         ButtonAPI.OnInit += ButtonAPI_OnInit;
         ButtonAPI.OnPlayerJoin += OnPlayerJoin;
@@ -115,12 +118,12 @@ public class Main : MelonMod {
 
     public override void OnSceneWasLoaded(int buildIndex, string sceneName) {
         if ((bool)LogWorldsSetting.BoxedValue) {
-            LoggerInstance.Msg("OnSceneWasLoaded: \"{0}\" (1)", sceneName, buildIndex);
+            LoggerInstance.Msg("OnSceneWasLoaded: \"{0}\" ({1})", sceneName, buildIndex);
         }
     }
     public override void OnSceneWasInitialized(int buildIndex, string sceneName) {
         if ((bool)LogWorldsSetting.BoxedValue) {
-            LoggerInstance.Msg("OnSceneWasInitialized: \"{0}\" (1)", sceneName, buildIndex);
+            LoggerInstance.Msg("OnSceneWasInitialized: \"{0}\" ({1})", sceneName, buildIndex);
         }
         if (!fully_loaded && sceneName == "Init") {
             fully_loaded = true;
@@ -128,6 +131,7 @@ public class Main : MelonMod {
         }
     }
     public void OnGameFullyLoaded() {
+        LoggerInstance.Msg("OnGameFullyLoaded");
         try {
             NetworkManager.Instance.GameNetwork.Disconnected += GameNetwork_Disconnected;
             // NetworkManager.Instance.GameNetwork.MessageReceived += OnMessageReceived;
