@@ -1,23 +1,12 @@
 ﻿using ABI.CCK.Components;
 using ABI_RC.Core.Networking;
-using ABI_RC.Core.Networking.IO.UserGeneratedContent;
 using ABI_RC.Core.Player;
-using ABI_RC.VideoPlayer.Scripts;
 using EventLogger;
 using HarmonyLib;
 using MelonLoader;
+using System;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.Networking;
-using System;
-using System.Collections;
-using System.IO;
-using ABI_RC.Core.Networking;
-using MelonLoader;
-using UnityEngine;
-using UnityEngine.Networking;
-using System.Net;
-using System.Linq;
 using ButtonAPI = ChilloutButtonAPI.ChilloutButtonAPIMain;
 using Main = EventLogger.Main;
 
@@ -27,7 +16,7 @@ using Main = EventLogger.Main;
 namespace EventLogger;
 
 public static class Guh {
-    public const string Name = "Event Logger";
+    public const string Name = "EventLogger";
     public const string Author = "Bluscream";
     public const string Version = "1.0.0";
     public const string DownloadLink = "";
@@ -45,6 +34,7 @@ public static class Patches {
 }
 
 public class Main : MelonMod {
+    public bool fully_loaded = false;
     public MelonPreferences_Entry LogJoinLeavesSetting;
     public MelonPreferences_Entry LogWorldsSetting;
     public MelonPreferences_Entry LogAvatarChangesSetting;
@@ -64,6 +54,7 @@ public class Main : MelonMod {
 
     public override void OnPreSupportModule() {
         LoggerInstance.Msg("OnPreSupportModule");
+        LoggerInstance.Msg(Environment.CommandLine);
     }
     public override void OnApplicationStart() {
         MelonPreferences_Category cat = MelonPreferences.CreateCategory(Guh.Name);
@@ -71,11 +62,6 @@ public class Main : MelonMod {
         LogJoinLeavesSetting = cat.CreateEntry<bool>("LogJoinLeaves", true, "Log Player Joins/Leaves");
         LogAvatarChangesSetting = cat.CreateEntry<bool>("LogAvatarChanges", true, "Log Avatar switching");
         LogPreferencesSetting = cat.CreateEntry<bool>("LogPreferences", false, "Log Saving/Loading of MelonPrefs");
-
-        NetworkManager.Instance.GameNetwork.Disconnected += GameNetwork_Disconnected;
-        // NetworkManager.Instance.GameNetwork.MessageReceived += OnMessageReceived;
-        NetworkManager.Instance.Api.Disconnected += Api_Disconnected;
-        NetworkManager.Instance.CallsNetwork.Disconnected += CallsNetwork_Disconnected;
 
         ButtonAPI.OnInit += ButtonAPI_OnInit;
         ButtonAPI.OnPlayerJoin += OnPlayerJoin;
@@ -91,7 +77,7 @@ public class Main : MelonMod {
     private void Api_Disconnected(object sender, DarkRift.Client.DisconnectedEventArgs e) => OnDisconnected("API", sender, e);
     private void OnDisconnected(string network, object sender, DarkRift.Client.DisconnectedEventArgs e) {
         if (e == null) return;
-        LoggerInstance.Msg("{0} {1} Disconnected: {1}", (e.LocalDisconnect?"[LOCAL]":""), network, e.Exception.Message);
+        LoggerInstance.Msg("{0} {1} Disconnected: {1}", (e.LocalDisconnect ? "[LOCAL]" : ""), network, e.Exception.Message);
     }
     private void OnMessageReceived(object sender, DarkRift.Client.MessageReceivedEventArgs e) {
     }
@@ -135,6 +121,20 @@ public class Main : MelonMod {
     public override void OnSceneWasInitialized(int buildIndex, string sceneName) {
         if ((bool)LogWorldsSetting.BoxedValue) {
             LoggerInstance.Msg("OnSceneWasInitialized: \"{0}\" (1)", sceneName, buildIndex);
+        }
+        if (!fully_loaded && sceneName == "Init") {
+            fully_loaded = true;
+            OnGameFullyLoaded();
+        }
+    }
+    public void OnGameFullyLoaded() {
+        try {
+            NetworkManager.Instance.GameNetwork.Disconnected += GameNetwork_Disconnected;
+            // NetworkManager.Instance.GameNetwork.MessageReceived += OnMessageReceived;
+            NetworkManager.Instance.Api.Disconnected += Api_Disconnected;
+            NetworkManager.Instance.CallsNetwork.Disconnected += CallsNetwork_Disconnected;
+        } catch (Exception ex) {
+            LoggerInstance.Warning(ex);
         }
     }
     public override void OnSceneWasUnloaded(int buildIndex, string sceneName) {
