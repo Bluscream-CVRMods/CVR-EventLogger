@@ -24,16 +24,21 @@ public static class Guh {
 
 public static class Patches {
     public static void Patch(HarmonyLib.Harmony harmonyInstance) {
-        harmonyInstance.Patch(typeof(CVRVideoPlayer).GetMethod("SetVideoUrl"), prefix: new HarmonyMethod(typeof(Patches).GetMethod("OnSetVideoUrl", BindingFlags.Static | BindingFlags.NonPublic)));
-        harmonyInstance.Patch(typeof(ABI_RC.Core.Networking.IO.Instancing.Instances).GetMethod("SetJoinTarget"), postfix: new HarmonyMethod(typeof(Patches).GetMethod("SetJoinTarget")));
+        _ = harmonyInstance.Patch(typeof(CVRVideoPlayer).GetMethod("SetVideoUrl"), prefix: new HarmonyMethod(typeof(Patches).GetMethod("OnSetVideoUrl", BindingFlags.Static | BindingFlags.NonPublic)));
+        _ = harmonyInstance.Patch(typeof(ABI_RC.Core.Networking.IO.Instancing.Instances).GetMethod("SetJoinTarget"), postfix: new HarmonyMethod(typeof(Patches).GetMethod("SetJoinTarget")));
         MelonLogger.Msg("Harmony patches completed!");
     }
     private static bool OnSetVideoUrl(string url, bool broadcast = true, string objPath = "", string username = null, bool isPaused = false) {
-        if ((bool)Main.LogVideoPlayerSetting.BoxedValue) MelonLogger.Msg($"VideoPlayer URL changed: {url}");
+        if ((bool)Main.LogVideoPlayerSetting.BoxedValue) {
+            MelonLogger.Msg($"VideoPlayer URL changed: {url}");
+        }
+
         return true;
     }
     public static void SetJoinTarget(string instanceId, string worldId) {
-        if ((bool)Main.LogWorldsSetting.BoxedValue) MelonLogger.Msg("Joining Instance {0}:{1}", worldId, instanceId);
+        if ((bool)Main.LogWorldsSetting.BoxedValue) {
+            MelonLogger.Msg("Joining Instance {0}:{1}", worldId, instanceId);
+        }
     }
 }
 
@@ -75,12 +80,24 @@ public class Main : MelonMod {
         Patches.Patch(HarmonyInstance);
     }
 
-    private void GameNetwork_Disconnected(object sender, DarkRift.Client.DisconnectedEventArgs e) => OnDisconnected("GameNetwork", sender, e);
-    private void CallsNetwork_Disconnected(object sender, DarkRift.Client.DisconnectedEventArgs e) => OnDisconnected("CallsNetwork", sender, e);
-    private void Api_Disconnected(object sender, DarkRift.Client.DisconnectedEventArgs e) => OnDisconnected("API", sender, e);
+    private void GameNetwork_Disconnected(object sender, DarkRift.Client.DisconnectedEventArgs e) {
+        OnDisconnected("GameNetwork", sender, e);
+    }
+
+    private void CallsNetwork_Disconnected(object sender, DarkRift.Client.DisconnectedEventArgs e) {
+        OnDisconnected("CallsNetwork", sender, e);
+    }
+
+    private void Api_Disconnected(object sender, DarkRift.Client.DisconnectedEventArgs e) {
+        OnDisconnected("API", sender, e);
+    }
+
     private void OnDisconnected(string network, object sender, DarkRift.Client.DisconnectedEventArgs e) {
-        if (e == null) return;
-        LoggerInstance.Msg("{0} {1} Disconnected: {1}", (e.LocalDisconnect ? "[LOCAL]" : ""), network, e.Exception.Message);
+        if (e == null) {
+            return;
+        }
+
+        LoggerInstance.Msg("{0} {1} Disconnected: {1}", e.LocalDisconnect ? "[LOCAL]" : "", network, e.Exception.Message);
     }
     private void OnMessageReceived(object sender, DarkRift.Client.MessageReceivedEventArgs e) {
     }
